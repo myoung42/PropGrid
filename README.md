@@ -1,6 +1,9 @@
 # PropGrid
 Converts a property grid for input into FRNC-5
 
+Known limitations:
+- currently cannot deal with single phase fluids.  Two Phase only.
+
 Download and install Python from the Microsoft Store
 
 To install, copy and paste the following commands in a terminal window, in order:
@@ -17,7 +20,8 @@ To install, copy and paste the following commands in a terminal window, in order
     python -m pip install -r requirements.txt
 
 To Run:
-    Relabel the excel columns per the list in the samplegrid.xlsx
+    -Relabel the excel columns per the list in the samplegrid.xlsx
+    -If total enthalpy is given, copy it and label for both vapor and liquid enthalpy
     
     enter in terminal window:
     python propgrid.py
