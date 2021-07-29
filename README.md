@@ -2,7 +2,6 @@
 Converts a property grid for input into FRNC-5
 
 Known limitations:
-- currently cannot deal with single phase fluids.  Two Phase only.
 - .xlsx files only.  other file types not supported
 
 Download and install Python from the Microsoft Store

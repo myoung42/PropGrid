@@ -9,6 +9,7 @@ def getfile(name):  #getfile returns a full filepath as a string
     while True: #request a filepath and check for errors
         filepath=pyip.inputFilepath('\ninput filepath\n', blank=False)
         if os.path.isdir(filepath)==True:
+            print('\n')
             break
         else:
             continue
@@ -16,6 +17,7 @@ def getfile(name):  #getfile returns a full filepath as a string
         filename=pyip.inputMenu(os.listdir(filepath), blank=False,numbered=True)
         full=os.path.join(filepath, filename)
         if os.path.isfile(full)==True:
+            print('\n')
             break
         else:
             continue
@@ -35,25 +37,40 @@ stream=pyip.inputStr(prompt='Stream name: ', blank=False)
 labels=['RID','PRESS','TEMP','WEIGHT FR','LIQ ENTH','LIQ VIS','LIQ DENS',
 'LIQ TH CON','LIQ SU TEN','LIQ HE CAP','VAP ENTH','VAP VIS','VAP DENS',
 'VAP TH CON','VAP HE CAP']
-
+#dict to reference output labels with input labels
+value={'REF GRID':'TEMP','WEIGHT FR':'WEIGHT FR','LIQ ENTH':'LIQ ENTH',
+'VAP ENTH':'VAP ENTH','LIQ VIS':'LIQ VIS','VAP VIS':'VAP VIS',
+'LIQ DENS':'LIQ DENS','VAP DENS':'VAP DENS','LIQ TH CON':'LIQ TH CON',
+'VAP TH CON':'VAP TH CON','LIQ SU TEN':'LIQ SU TEN','LIQ HE CAP':'LIQ HE CAP',
+'VAP HE CAP':'VAP HE CAP'}
+#list output column labels
+label=['REF GRID','WEIGHT FR','LIQ ENTH','VAP ENTH','LIQ VIS','VAP VIS',
+'LIQ DENS','VAP DENS','LIQ TH CON','VAP TH CON','LIQ SU TEN','LIQ HE CAP',
+'VAP HE CAP']
 print(f'\nRename columns in the excel spreadsheet to match the following: \n{labels}\n')
-
 f=''
 f=getfile(f) #get filepath to file
 #TODO: address different filetypes (ie. csv)
+#TODO: convert to function by filetype
 file=pd.ExcelFile(f) #open the excel file
 sheet=pyip.inputMenu(file.sheet_names, numbered=True) #select a sheet
 df=pd.read_excel(file, sheet_name=sheet) #read data into dataframe
-#check data
+
+#compare imported columns to expected column list.  add blank columns 
+#this is to deal with single phase fluids
+dfcolumns=df.columns.tolist() #list df columns
+#verify TEMP, PRESS, and WEIGHT FR are in dfcolumns - kill program if not included
+baremin=['PRESS','TEMP','WEIGHT FR']
+if set(baremin).issubset(set(dfcolumns))==False:
+    raise Exception('Grid must include PRESS, TEMP, and WEIGHT FR at minimum')
+newcol=list(set(labels)-set(dfcolumns)) #compare df columns to expected columns
+newdfcol=dfcolumns+newcol #combine columns lists into new list
+df=df.reindex(columns=newdfcol) #reindex to add new columns with null values
+df=df.fillna('0.0') #replace null values with zeros
     #TODO:values increasing/decreasing with temperature / pressure
     #TODO:verify covers temperature and pressure ranges
     #TODO:verify each phase exists on all isobars
     #TODO:locate dew & bubble points & prevent filtering them out
-#filter data 
-    #TODO:verify covers pressure range
-    #TODO:verify each phase exists on all isobars
-    #TODO:identify dew & bubble points on remaining isobars 
-    #TODO:prevent filtering dew & bubble points +/- 1 temperature
 
 press=df["PRESS"].unique().tolist() #get unique pressures from df
 temp=df["TEMP"].unique().tolist()   #get unique temperatures from df
@@ -86,7 +103,9 @@ if len(temp)>20:    #reduce list of temperatures to 20 for FRNC-5
 print('The remaining isotherms are:\n')
 for t in range(len(temp)):
     print(f'{t+1}. {temp[t]}')
-
+#filter data 
+    #TODO:verify covers pressure range & temp range
+    #TODO:verify each phase exists on all isobars
 #filter df using press & temp
 df2=df.loc[(df['PRESS'].isin(press)) & (df['TEMP'].isin(temp))]
 #output data
@@ -94,16 +113,7 @@ folder=os.path.dirname(f) #get folder
 #open a text file with automatic filename
 output=open(folder + '\\' + str(num) + '-' + str(stream) + '.txt', 'w')
 output.write(f'STREAM,{num},{stream}') #write stream data
-#create dict of labels
-value={'REF GRID':'TEMP','WEIGHT FR':'WEIGHT FR','LIQ ENTH':'LIQ ENTH',
-'VAP ENTH':'VAP ENTH','LIQ VIS':'LIQ VIS','VAP VIS':'VAP VIS',
-'LIQ DENS':'LIQ DENS','VAP DENS':'VAP DENS','LIQ TH CON':'LIQ TH CON',
-'VAP TH CON':'VAP TH CON','LIQ SU TEN':'LIQ SU TEN','LIQ HE CAP':'LIQ HE CAP',
-'VAP HE CAP':'VAP HE CAP'}
-label=['REF GRID','WEIGHT FR','LIQ ENTH','VAP ENTH','LIQ VIS','VAP VIS',
-'LIQ DENS','VAP DENS','LIQ TH CON','VAP TH CON','LIQ SU TEN','LIQ HE CAP',
-'VAP HE CAP']
-#TODO: deal with missing labels for single phase fluids
+
 for i in range(len(label)): #loop over labels
     for p in range(len(press)):  #iterate over pressure range
         df3=df2[df2['PRESS']==press[p]]  #returns a dataframe filtered for a single pressure
