@@ -23,6 +23,7 @@ def getfile(name):  #getfile returns a full filepath as a string
             continue
     return full
 
+#define main() function and move there
 #get stream label info
 num=pyip.inputInt(prompt='Stream number: ', blank=False, min=2)
 stream=pyip.inputStr(prompt='Stream name: ', blank=False)
@@ -56,6 +57,7 @@ file=pd.ExcelFile(f) #open the excel file
 sheet=pyip.inputMenu(file.sheet_names, numbered=True) #select a sheet
 df=pd.read_excel(file, sheet_name=sheet) #read data into dataframe
 
+#TODO: define data processing function and move code to there
 #compare imported columns to expected column list.  add blank columns 
 #this is to deal with single phase fluids
 dfcolumns=df.columns.tolist() #list df columns
@@ -67,10 +69,7 @@ newcol=list(set(labels)-set(dfcolumns)) #compare df columns to expected columns
 newdfcol=dfcolumns+newcol #combine columns lists into new list
 df=df.reindex(columns=newdfcol) #reindex to add new columns with null values
 df=df.fillna('0.0') #replace null values with zeros
-    #TODO:values increasing/decreasing with temperature / pressure
-    #TODO:verify covers temperature and pressure ranges
-    #TODO:verify each phase exists on all isobars
-    #TODO:locate dew & bubble points & prevent filtering them out
+
 
 press=df["PRESS"].unique().tolist() #get unique pressures from df
 temp=df["TEMP"].unique().tolist()   #get unique temperatures from df
@@ -104,10 +103,15 @@ print('The remaining isotherms are:\n')
 for t in range(len(temp)):
     print(f'{t+1}. {temp[t]}')
 #filter data 
-    #TODO:verify covers pressure range & temp range
+    #TODO:values increasing/decreasing with temperature / pressure
+    #TODO:verify covers temperature and pressure ranges
     #TODO:verify each phase exists on all isobars
+    #TODO:locate dew & bubble points & prevent filtering them out
+    #TODO:verify dew & bubble point data exists, and fill in if missing
 #filter df using press & temp
 df2=df.loc[(df['PRESS'].isin(press)) & (df['TEMP'].isin(temp))]
+
+#TODO: define data output function and move code there 
 #output data
 folder=os.path.dirname(f) #get folder
 #open a text file with automatic filename
@@ -136,3 +140,5 @@ for i in range(len(label)): #loop over labels
             output.write(f',{data[d]}') #write temperature data
 output.write('\nEND PROPERTY INPUT') #write closing 
 output.close() #close text file
+
+#TODO:Define entry point if __name__ == '__main__': 
