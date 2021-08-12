@@ -3,7 +3,7 @@
 #the format required for input into PFR Engineering FRNC-5PC software.  
 import pandas as pd
 import pyinputplus as pyip
-import os
+import os, collections
 #import argparse
 #import logging
 
@@ -83,9 +83,8 @@ newdfcol=dfcolumns+newcol #combine columns lists into new list
 df=df.reindex(columns=newdfcol) #reindex to add new columns with null values
 df=df.fillna('0.0') #replace null values with zeros
 
-
 press=df["PRESS"].unique().tolist() #get unique pressures from df
-temp=df["TEMP"].unique().tolist()   #get unique temperatures from df
+press.sort()
 print(f'\nthere are {len(press)} isobars\n')
 if len(press)>7:    #reduce list of pressures to 7 for FRNC-5
     print('Maximum 7 isobars allowed\n')
@@ -100,6 +99,12 @@ if len(press)>7:    #reduce list of pressures to 7 for FRNC-5
 print('The remaining isobars are:\n')
 for p in range(len(press)):
     print(f'{p+1}. {press[p]}')
+dfp=df.loc[(df['PRESS'].isin(press))]  #filter dataframe for selected pressures
+#tempdict=collections.OrderedDict(sorted(dfp[['PRESS','TEMP']].drop_duplicates().set_index('TEMP').to_dict()['PRESS'].items()))
+temp=dfp["TEMP"].unique().tolist()   #get unique temperatures from df
+temp.sort()
+#THIS METHOD OF FILTERING TEMPERATURES CHOKES WHEN THERE ARE NONIDENTICAL ISOTHERMS PER ISOBAR
+#TODO: deal with non-uniform temperature data
 
 print(f'\nThere are {len(temp)} isotherms\n')
 if len(temp)>20:    #reduce list of temperatures to 20 for FRNC-5
