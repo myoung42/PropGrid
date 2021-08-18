@@ -1,0 +1,23 @@
+2021-08-18 09:03:32,553 root ERROR Error running task
+Traceback (most recent call last):
+  File "C:\Users\myoung.BMCD\Documents\PropGrid\propgrid.py", line 166, in <module>
+    main()
+  File "C:\Users\myoung.BMCD\Documents\PropGrid\propgrid.py", line 72, in main
+    df=excel(f)
+  File "C:\Users\myoung.BMCD\Documents\PropGrid\propgrid.py", line 40, in excel
+    file=pd.ExcelFile(f) #open the excel file
+NameError: name 'f' is not defined
+2021-08-18 09:15:30,282 root ERROR Error running task
+Traceback (most recent call last):
+  File "C:\Users\myoung.BMCD\Documents\PropGrid\propgrid.py", line 175, in <module>
+    main()
+  File "C:\Users\myoung.BMCD\Documents\PropGrid\propgrid.py", line 72, in main
+    'csv': pd_csv,
+NameError: name 'pd_csv' is not defined
+2021-08-18 09:15:50,778 root ERROR Error running task
+Traceback (most recent call last):
+  File "C:\Users\myoung.BMCD\Documents\PropGrid\propgrid.py", line 175, in <module>
+    main()
+  File "C:\Users\myoung.BMCD\Documents\PropGrid\propgrid.py", line 72, in main
+    'csv': pd_csv,
+NameError: name 'pd_csv' is not defined
