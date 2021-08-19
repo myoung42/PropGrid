@@ -37,18 +37,14 @@ def pd_excel(f): #take an excel file and return a dataframe from the sheet
 def pd_csv(f):  #TODO:take a csv file and return a dataframe
     logging.exception('unsupported file type')
 def pd_clean(df, labels): #take a df and clean it up 
-    #compare imported columns to expected column list.  add blank columns 
-    #this is to deal with single phase fluids
     dfcolumns=df.columns.tolist() #list df columns
     #verify TEMP, PRESS, and WEIGHT FR are in dfcolumns - kill program if not included
     baremin=['PRESS','TEMP','WEIGHT FR']
     if set(baremin).issubset(set(dfcolumns))==False:
         raise Exception('Grid must include PRESS, TEMP, and WEIGHT FR at minimum')
-
     newcol=list(set(labels)-set(dfcolumns)) #compare df columns to expected columns
     newdfcol=dfcolumns+newcol #combine columns lists into new list
     df=df.reindex(columns=newdfcol) #reindex to add new columns with null values
-
     df=df.fillna('0.0') #replace null values with zeros
     return df
 def build_filter(flist, value, limit):  #take a list and remove values to build the filter
