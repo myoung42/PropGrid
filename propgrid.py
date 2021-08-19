@@ -4,16 +4,14 @@
 import pandas as pd
 import pyinputplus as pyip
 import os, logging, argparse, collections
+#TODO:values increasing/decreasing with temperature / pressure
+#TODO:verify covers temperature and pressure ranges
+#TODO:verify each phase exists on all isobars
+#TODO:locate dew & bubble points & prevent filtering them out
+#TODO:verify dew & bubble point data exists, and fill in if missing
+#TODO:in unique temperature filter, build a new dataframe, with each isobar filtered for isotherms.
 LOG_FORMAT = '%(asctime)s %(name)s %(levelname)s %(message)s'
 LOG_LEVEL = logging.DEBUG
-#TODO:define functions and move code there
-#TODO:filter data 
-    #TODO:values increasing/decreasing with temperature / pressure
-    #TODO:verify covers temperature and pressure ranges
-    #TODO:verify each phase exists on all isobars
-    #TODO:locate dew & bubble points & prevent filtering them out
-    #TODO:verify dew & bubble point data exists, and fill in if missing
-
 def getfile(name):  #getfile returns a full filepath as a string
     while True: #request a filepath and check for errors
         filepath=pyip.inputFilepath('\ninput filepath\n', blank=False)
@@ -36,8 +34,66 @@ def pd_excel(f): #take an excel file and return a dataframe from the sheet
     sheet=pyip.inputMenu(file.sheet_names, numbered=True) #select a sheet
     df=pd.read_excel(file, sheet_name=sheet) #read data into dataframe
     return df
-def pd_csv(f):  #take a csv file and return a dataframe
+def pd_csv(f):  #TODO:take a csv file and return a dataframe
     logging.exception('unsupported file type')
+def pd_clean(df, labels): #take a df and clean it up 
+    #compare imported columns to expected column list.  add blank columns 
+    #this is to deal with single phase fluids
+    dfcolumns=df.columns.tolist() #list df columns
+    #verify TEMP, PRESS, and WEIGHT FR are in dfcolumns - kill program if not included
+    baremin=['PRESS','TEMP','WEIGHT FR']
+    if set(baremin).issubset(set(dfcolumns))==False:
+        raise Exception('Grid must include PRESS, TEMP, and WEIGHT FR at minimum')
+
+    newcol=list(set(labels)-set(dfcolumns)) #compare df columns to expected columns
+    newdfcol=dfcolumns+newcol #combine columns lists into new list
+    df=df.reindex(columns=newdfcol) #reindex to add new columns with null values
+
+    df=df.fillna('0.0') #replace null values with zeros
+    return df
+def build_filter(flist, value, limit):  #take a list and remove values to build the filter
+    print(f'\nthere are {len(flist)} {value}\n')
+    if len(flist)>limit:    #reduce list of listures to 7 for FRNC-5
+        print(f'Maximum {limit} {value} allowed\n')
+        print('Delete from the following list:\n')
+        for p in range(len(flist)): #convert to strings for inputMenu
+            flist[p]=str(flist[p])
+        while len(flist)>limit:
+            response=pyip.inputMenu(flist, numbered=True)
+            flist.remove(response)
+        for p in range(len(flist)): #convert back to numbers
+            flist[p]=float(flist[p])
+    print(f'The remaining {value} are:\n')
+    for p in range(len(flist)):
+        print(f'{p+1}. {flist[p]}')
+    return flist
+def output(df2, f, num, stream, label, value, press, temp):
+    folder=os.path.dirname(f) #get folder
+    #open a text file with automatic filename
+    output=open(folder + '\\' + str(num) + '-' + str(stream) + '.txt', 'w')
+    output.write(f'STREAM,{num},{stream}') #write stream data
+    for i in range(len(label)): #loop over labels
+        for p in range(len(press)):  #iterate over pressure range
+            df3=df2[df2['PRESS']==press[p]]  #returns a dataframe filtered for a single pressure
+            df4=df3[[value[label[i]]]] #returns a dataframe of a single label for a single pressure
+            output.write(f'\n{label[i]},{press[p]}') #write row label
+            data=df4[value[label[i]]].tolist()  #returns a list of the items in df4 
+            for d in range(0,min(6,len(data))): #iterate over temperature range
+                output.write(f',{data[d]}')  #write temperature data
+            if len(temp)<6: #adjust for grid size
+                continue
+            output.write('\n')
+            output.write(f'{label[i]},{press[p]}') #write row label
+            for d in range(6,min(12,len(data))): #iterate over temperature range
+                output.write(f',{data[d]}') #write temperature data
+            if len(temp)<12:   #adjust for grid size
+                continue
+            output.write('\n')
+            output.write(f'{label[i]},{press[p]}')  #write row label
+            for d in range(12,len(data)):  #iterate over temperature range
+                output.write(f',{data[d]}') #write temperature data
+    output.write('\nEND PROPERTY INPUT') #write closing 
+    output.close() #close text file
 def main():
     num=pyip.inputInt(prompt='Stream number: ', blank=False, min=2)  #get stream label info
     stream=pyip.inputStr(prompt='Stream name: ', blank=False)
@@ -70,87 +126,27 @@ def main():
     else:
         logging.exception('unsupported file type')
         raise Exception('unsupported file type')
-    #compare imported columns to expected column list.  add blank columns 
-    #this is to deal with single phase fluids
-    dfcolumns=df.columns.tolist() #list df columns
-    #verify TEMP, PRESS, and WEIGHT FR are in dfcolumns - kill program if not included
-    baremin=['PRESS','TEMP','WEIGHT FR']
-    if set(baremin).issubset(set(dfcolumns))==False:
-        raise Exception('Grid must include PRESS, TEMP, and WEIGHT FR at minimum')
-    newcol=list(set(labels)-set(dfcolumns)) #compare df columns to expected columns
-    newdfcol=dfcolumns+newcol #combine columns lists into new list
-    df=df.reindex(columns=newdfcol) #reindex to add new columns with null values
-    df=df.fillna('0.0') #replace null values with zeros
-
+    df=pd_clean(df, labels)
     press=df["PRESS"].unique().tolist() #get unique pressures from df
     press.sort()
-    print(f'\nthere are {len(press)} isobars\n')
-    if len(press)>7:    #reduce list of pressures to 7 for FRNC-5
-        print('Maximum 7 isobars allowed\n')
-        print('Delete from the following list:\n')
-        for p in range(len(press)): #convert to strings for inputMenu
-            press[p]=str(press[p])
-        while len(press)>7:
-            response=pyip.inputMenu(press, numbered=True)
-            press.remove(response)
-        for p in range(len(press)): #convert back to numbers
-            press[p]=float(press[p])
-    print('The remaining isobars are:\n')
-    for p in range(len(press)):
-        print(f'{p+1}. {press[p]}')
+    press=build_filter(press, 'isobars', 7) #build pressure filter
     dfp=df.loc[(df['PRESS'].isin(press))]  #filter dataframe for selected pressures
-    #tempdict=collections.OrderedDict(sorted(dfp[['PRESS','TEMP']].drop_duplicates().set_index('TEMP').to_dict()['PRESS'].items()))
-    temp=dfp["TEMP"].unique().tolist()   #get unique temperatures from df
-    temp.sort()
-    #THIS METHOD OF FILTERING TEMPERATURES CHOKES WHEN THERE ARE NONIDENTICAL ISOTHERMS PER ISOBAR
-    #TODO: deal with non-uniform temperature data
-
-    print(f'\nThere are {len(temp)} isotherms\n')
-    if len(temp)>20:    #reduce list of temperatures to 20 for FRNC-5
-        print('Maximum 20 isotherms allowed\n')
-        print('Delete from the following list:\n')
-        for t in range(len(temp)): #convert to strings for inputMenu
-            temp[t]=str(temp[t])
-        while len(temp)>20:
-            response=pyip.inputMenu(temp, numbered=True)
-            temp.remove(response)
-        for t in range(len(temp)): #convert back to numbers
-            temp[t]=float(temp[t])
-    print('The remaining isotherms are:\n')
-    for t in range(len(temp)):
-        print(f'{t+1}. {temp[t]}')
-
-    #filter df using press & temp
-    df2=df.loc[(df['PRESS'].isin(press)) & (df['TEMP'].isin(temp))]
-
-    #output data
-    folder=os.path.dirname(f) #get folder
-    #open a text file with automatic filename
-    output=open(folder + '\\' + str(num) + '-' + str(stream) + '.txt', 'w')
-    output.write(f'STREAM,{num},{stream}') #write stream data
-
-    for i in range(len(label)): #loop over labels
+    tfilterby=pyip.inputMenu(['common','unique'],prompt='Filter by common or unique isotherms?:\n', blank=False,numbered=True)
+    if tfilterby=='common':
+        temp=dfp["TEMP"].unique().tolist()   #get unique temperatures from df
+        temp.sort()
+        temp=build_filter(temp, 'isotherms', 20) #build temperature filter
+    else:
+        temp=[]
         for p in range(len(press)):  #iterate over pressure range
-            df3=df2[df2['PRESS']==press[p]]  #returns a dataframe filtered for a single pressure
-            df4=df3[[value[label[i]]]] #returns a dataframe of a single label for a single pressure
-            output.write(f'\n{label[i]},{press[p]}') #write row label
-            data=df4[value[label[i]]].tolist()  #returns a list of the items in df4 
-            for d in range(0,min(6,len(data))): #iterate over temperature range
-                output.write(f',{data[d]}')  #write temperature data
-            if len(temp)<6: #adjust for grid size
-                continue
-            output.write('\n')
-            output.write(f'{label[i]},{press[p]}') #write row label
-            for d in range(6,min(12,len(data))): #iterate over temperature range
-                output.write(f',{data[d]}') #write temperature data
-            if len(temp)<12:   #adjust for grid size
-                continue
-            output.write('\n')
-            output.write(f'{label[i]},{press[p]}')  #write row label
-            for d in range(12,len(data)):  #iterate over temperature range
-                output.write(f',{data[d]}') #write temperature data
-    output.write('\nEND PROPERTY INPUT') #write closing 
-    output.close() #close text file
+            dft=dfp[dfp['PRESS']==press[p]]  #returns a dataframe filtered for a single pressure
+            temptemp=dft["TEMP"].unique().tolist()   #get unique temperatures from df
+            temptemp.sort()
+            temptemp=build_filter(temptemp, 'isotherms', 20) 
+            [temp.append(x) for x in temptemp if x not in temp]
+            temp.sort()
+    df2=df.loc[(df['PRESS'].isin(press)) & (df['TEMP'].isin(temp))] #filter df using press & temp
+    output(df2, f, num, stream, label, value, press, temp)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -158,8 +154,7 @@ if __name__ == '__main__':
                         default=None)
     args = parser.parse_args()
     if args.log:
-        logging.basicConfig(format=LOG_FORMAT, filename=args.log,
-                            level=LOG_LEVEL)
+        logging.basicConfig(format=LOG_FORMAT, filename=args.log, level=LOG_LEVEL)
     else:
         logging.basicConfig(format=LOG_FORMAT, level=LOG_LEVEL)
     try:
