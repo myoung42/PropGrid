@@ -3,7 +3,7 @@
 #the format required for input into PFR Engineering FRNC-5PC software.  
 import pandas as pd
 import pyinputplus as pyip
-import os, logging, argparse, collections
+import os, logging, argparse
 #TODO:values increasing/decreasing with temperature / pressure
 #TODO:verify covers temperature and pressure ranges
 #TODO:verify each phase exists on all isobars
@@ -150,8 +150,7 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', dest='log', type=str, help='log file',
-                        default=None)
+    parser.add_argument('-l', dest='log', type=str, help='log file', default=None)
     args = parser.parse_args()
     if args.log:
         logging.basicConfig(format=LOG_FORMAT, filename=args.log, level=LOG_LEVEL)
