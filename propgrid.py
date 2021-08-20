@@ -9,7 +9,6 @@ import os, logging, argparse
 #TODO:verify each phase exists on all isobars
 #TODO:locate dew & bubble points & prevent filtering them out
 #TODO:verify dew & bubble point data exists, and fill in if missing
-#TODO:in unique temperature filter, build a new dataframe, with each isobar filtered for isotherms.
 LOG_FORMAT = '%(asctime)s %(name)s %(levelname)s %(message)s'
 LOG_LEVEL = logging.DEBUG
 def getfile(name):  #getfile returns a full filepath as a string
