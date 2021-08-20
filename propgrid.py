@@ -141,6 +141,7 @@ def main():
             temptemp=build_filter(temptemp, 'isotherms', 20) 
             [temp.append(x) for x in temptemp if x not in temp]
             temp.sort()
+            #move df2 into this if statement. add each filtered isobar individually
     df2=df.loc[(df['PRESS'].isin(press)) & (df['TEMP'].isin(temp))] #filter df using press & temp
     output(df2, f, num, stream, label, value, press, temp)
 
