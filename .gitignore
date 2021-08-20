@@ -1,0 +1,9 @@
+.venv
+.vscode
+.venv/
+.vs
+credentials.json
+token.json
+*.json
+*.pickle
+twilio.ini
