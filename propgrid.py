@@ -132,8 +132,10 @@ def main():
         temp=dfp["TEMP"].unique().tolist()   #get unique temperatures from df
         temp.sort()
         temp=build_filter(temp, 'isotherms', 20) #build temperature filter
+        df2=df.loc[(df['PRESS'].isin(press)) & (df['TEMP'].isin(temp))] #filter df using press & temp
     else:
         temp=[]
+        df2=pd.DataFrame(columns=label)
         for p in range(len(press)):  #iterate over pressure range
             dft=dfp[dfp['PRESS']==press[p]]  #returns a dataframe filtered for a single pressure
             temptemp=dft["TEMP"].unique().tolist()   #get unique temperatures from df
@@ -141,8 +143,8 @@ def main():
             temptemp=build_filter(temptemp, 'isotherms', 20) 
             [temp.append(x) for x in temptemp if x not in temp]
             temp.sort()
-            #move df2 into this if statement. add each filtered isobar individually
-    df2=df.loc[(df['PRESS'].isin(press)) & (df['TEMP'].isin(temp))] #filter df using press & temp
+            dftemp=dft.loc[(dft['PRESS'].isin(press)) & (dft['TEMP'].isin(temptemp))] #filtered dataframe for one isobar
+            df2=df2.append(dftemp)         
     output(df2, f, num, stream, label, value, press, temp)
 
 if __name__ == '__main__':
